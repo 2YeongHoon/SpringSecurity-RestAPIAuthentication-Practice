@@ -1,3 +1,3 @@
-# SpringSecurity-Login-Practice
+# SpringSecurity-RestAPIAuthentication-Practice
 ``````
-SpringSecurity-Practice-FormAuthetication
+SpringSecurity-RestAPIAuthentication-Practice

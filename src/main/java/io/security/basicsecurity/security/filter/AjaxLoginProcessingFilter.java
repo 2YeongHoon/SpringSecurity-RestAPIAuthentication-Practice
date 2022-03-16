@@ -1,47 +1,54 @@
 package io.security.basicsecurity.security.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.security.basicsecurity.domain.AccountDto;
+import io.security.basicsecurity.security.domain.UserDto;
+import io.security.basicsecurity.security.exception.AuthMethodNotSupportedException;
+import io.security.basicsecurity.security.token.AjaxAuthenticationToken;
+import io.security.basicsecurity.util.WebUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.thymeleaf.util.StringUtils;
+import org.springframework.util.StringUtils;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Arrays;
 
-// Json 방식 데이터 처리
 public class AjaxLoginProcessingFilter extends AbstractAuthenticationProcessingFilter {
+    private static Logger logger = LoggerFactory.getLogger(AjaxLoginProcessingFilter.class);
 
-    private ObjectMapper objectMapper = new ObjectMapper();
-    protected AjaxLoginProcessingFilter(){
-        super(new AntPathRequestMatcher("/api/login"));
+    private ObjectMapper objectMapper;
+    
+    public AjaxLoginProcessingFilter() {
+        super(new AntPathRequestMatcher("/login", "POST"));
     }
 
     @Override
-    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException, IOException {
-        if(!isAjax(request)){
-            throw new IllegalStateException("Authentication is not supported");
+    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
+            throws AuthenticationException, IOException {
+
+        if (!HttpMethod.POST.name().equals(request.getMethod()) || !WebUtil.isAjax(request)) {
+            throw new AuthMethodNotSupportedException("Authentication method not supported");
         }
 
-        // Json 형식으로 들어온 데이터 객체로 저장
-        AccountDto accountDto = objectMapper.readValue(request.getReader(), AccountDto.class);
-
-        if(StringUtils.isEmpty(accountDto.getUserName()) || StringUtils.isEmpty(accountDto.getPassword())){
-            throw new IllegalStateException("username or Password empty");
+        UserDto userDto = objectMapper.readValue(request.getReader(), UserDto.class);
+        userDto.setRoles(Arrays.asList("ROLE_USER"));
+        
+        if (StringUtils.isEmpty(userDto.getUsername()) || StringUtils.isEmpty(userDto.getPassword())) {
+            throw new AuthenticationServiceException("Username or Password not provided");
         }
-        return null;
+        AjaxAuthenticationToken token = AjaxAuthenticationToken.getTokenFromAccountContext(userDto);
+
+        return this.getAuthenticationManager().authenticate(token);
     }
 
-    private boolean isAjax(HttpServletRequest request){
-
-        if("XMLHttpRequest".equals(request.getHeader("X-Requested-with"))){
-            return true;
-        }
-
-        return false;
+    public void setObjectMapper(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
     }
 }

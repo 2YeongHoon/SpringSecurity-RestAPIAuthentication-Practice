@@ -9,9 +9,9 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>io.security</groupId>
-    <artifactId>basicsecurity</artifactId>
+    <artifactId>corespringsecurity</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>basicsecurity</name>
+    <name>corespringsecurity</name>
     <description>Core Spring Security</description>
 
     <properties>
